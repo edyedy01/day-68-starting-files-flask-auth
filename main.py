@@ -45,8 +45,8 @@ with app.app_context():
 
 def save(name, email, password):
     try:
-        user_to_create = User(name=name, email=email, password=password)
-        db.session.add(user_to_create)
+        current_user = User(name=name, email=email, password=password)
+        db.session.add(current_user)
         db.session.commit()
         return True
     except Exception as e:
@@ -95,8 +95,9 @@ def register():
         # hash the password
         hashed_output = generate_password_hash(password, method='pbkdf2:sha256', salt_length=8)
         outcome = save(name, email, hashed_output)
+        login_user(current_user)
         if outcome:
-            return render_template("secrets.html", name=name)
+            return render_template("secrets.html", name=name, logged_in=current_user.is_authenticated)
     elif request.method == "GET":
         print('unhandled for now')
     return render_template("register.html")
@@ -112,13 +113,13 @@ def login():
         if current_user:
             if check_password_hash(current_user.password, password):
                 login_user(current_user)
-                return redirect(url_for('secrets', logged_in = current_user.is_authenticated))
+                return redirect(url_for('secrets', logged_in=current_user.is_authenticated))
             else:
                 flash(error)
-                return render_template("login.html", logged_in = current_user.is_authenticated)
+                return render_template("login.html", logged_in=current_user.is_authenticated)
         else:
             flash(error)
-            return render_template("login.html", logged_in = current_user.is_authenticated)
+            return render_template("login.html", logged_in=current_user.is_authenticated)
     else:
         print(f'Recursive')
         return render_template("login.html", logged_in = False)
